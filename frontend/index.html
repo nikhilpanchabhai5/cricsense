@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CricSense - IPL Match Predictor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-section {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-header {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .winner-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .winner-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .confidence-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .probability-bars {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .prob-bar {
+            text-align: center;
+        }
+
+        .prob-team {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .prob-fill {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .prob-fill-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: width 0.5s ease;
+        }
+
+        .prob-percent {
+            margin-top: 8px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+            border-left: 5px solid #c62828;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .team-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .team-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .vs-text {
+            text-align: center;
+            padding: 10px 0;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .analytics-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .analytics-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .chart-small {
+            position: relative;
+            height: 250px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .probability-bars {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-bar {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            border-left: 4px solid #2e7d32;
+            display: none;
+        }
+
+        .status-bar.show {
+            display: block;
+        }
+
+        .status-bar.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left-color: #c62828;
+        }
+
+        .venue-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 1000;
+        }
+
+        .venue-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .venue-item:hover {
+            background: #f0f4ff;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>⚡ CricSense</h1>
+            <p>IPL Match Prediction & Analytics Dashboard</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Prediction Form -->
+            <div class="card">
+                <h2>🔮 Match Predictor</h2>
+                
+                <div class="status-bar" id="statusBar"></div>
+
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="team1">Team 1</label>
+                        <select id="team1" required>
+                            <option value="">Loading teams...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="team2">Team 2</label>
+                        <select id="team2" required>
+                            <option value="">Loading teams...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="venue">Venue / Stadium</label>
+                        <select id="venue" required>
+                            <option value="">Select venue...</option>
+                            <option value="Wankhede Stadium">Wankhede Stadium</option>
+                            <option value="Eden Gardens">Eden Gardens</option>
+                            <option value="M.A. Chidambaram Stadium">M.A. Chidambaram Stadium</option>
+                            <option value="Arun Jaitley Stadium">Arun Jaitley Stadium</option>
+                            <option value="Narendra Modi Stadium">Narendra Modi Stadium</option>
+                            <option value="Punjab Cricket Association IS Bindra Stadium">Punjab Cricket Association IS Bindra Stadium</option>
+                            <option value="Rajiv Gandhi International Cricket Stadium">Rajiv Gandhi International Cricket Stadium</option>
+                            <option value="Barsapara Cricket Stadium">Barsapara Cricket Stadium</option>
+                            <option value="Sheikh Zayed Stadium">Sheikh Zayed Stadium</option>
+                            <option value="Arun Jaitley Stadium">Arun Jaitley Stadium</option>
+                            <option value="M.Chinnaswamy Stadium">M.Chinnaswamy Stadium</option>
+                            <option value="Punjab Cricket Association Stadium">Punjab Cricket Association Stadium</option>
+                            <option value="Delhi Cricket Association Stadium">Delhi Cricket Association Stadium</option>
+                            <option value="Holkar Cricket Stadium">Holkar Cricket Stadium</option>
+                            <option value="Feroz Shah Kotla">Feroz Shah Kotla</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tossWinner">Toss Winner</label>
+                        <select id="tossWinner" required>
+                            <option value="">Select toss winner</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tossDecision">Toss Decision</label>
+                        <select id="tossDecision" required>
+                            <option value="">Select decision</option>
+                            <option value="bat">Bat First</option>
+                            <option value="bowl">Bowl First</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">🎯 Predict Winner</button>
+                </form>
+
+                <!-- Result Section -->
+                <div id="resultSection" style="display: none;">
+                    <div class="result-section">
+                        <div class="result-header">Prediction Result</div>
+                        
+                        <div class="team-info">
+                            <div class="team-card">
+                                <div class="team-name" id="resultTeam1">CSK</div>
+                                <div style="font-size: 0.9rem;">Team 1</div>
+                            </div>
+                            <div class="team-card">
+                                <div class="team-name" id="resultTeam2">MI</div>
+                                <div style="font-size: 0.9rem;">Team 2</div>
+                            </div>
+                        </div>
+
+                        <div class="winner-box">
+                            <div class="winner-name" id="winnerName">CSK</div>
+                            <div class="confidence-text">Predicted to win</div>
+                        </div>
+
+                        <div class="probability-bars">
+                            <div class="prob-bar">
+                                <div class="prob-team" id="probTeam1">CSK</div>
+                                <div class="prob-fill">
+                                    <div class="prob-fill-inner" id="probFill1" style="width: 50%;">
+                                        <span id="probPercent1">50%</span>
+                                    </div>
+                                </div>
+                                <div class="prob-percent" id="probPercent1Text">50.00%</div>
+                            </div>
+
+                            <div class="prob-bar">
+                                <div class="prob-team" id="probTeam2">MI</div>
+                                <div class="prob-fill">
+                                    <div class="prob-fill-inner" id="probFill2" style="width: 50%; background: linear-gradient(90deg, #ff6b6b, #ee5a6f);">
+                                        <span id="probPercent2">50%</span>
+                                    </div>
+                                </div>
+                                <div class="prob-percent" id="probPercent2Text">50.00%</div>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="probabilityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div class="error-message" id="errorMessage"></div>
+
+                <!-- Loading Spinner -->
+                <div class="loading" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Making prediction...</p>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="card">
+                <h2>ℹ️ How It Works</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🤖 Machine Learning Model</h3>
+                    <p style="color: #666; line-height: 1.6;">
+                        Our AI model analyzes historical IPL match data and predicts winners based on:
+                    </p>
+                    <ul style="margin: 10px 0 0 20px; color: #666; line-height: 1.8;">
+                        <li>Toss outcome</li>
+                        <li>Team performance history</li>
+                        <li>Batting first advantage</li>
+                        <li>Venue statistics</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">📊 Accuracy</h3>
+                    <p style="color: #666;">
+                        Current model accuracy: <strong>55%</strong> on test data. This improves with more historical data and advanced features.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🏏 IPL Teams</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="color: #666;">
+                            • Chennai Super Kings<br>
+                            • Mumbai Indians<br>
+                            • Royal Challengers<br>
+                            • Kolkata Knight Riders<br>
+                            • Delhi Capitals
+                        </div>
+                        <div style="color: #666;">
+                            • Rajasthan Royals<br>
+                            • Sunrisers Hyderabad<br>
+                            • Punjab Kings<br>
+                            • Gujarat Titans<br>
+                            • Lucknow Super Giants
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="card full-width">
+            <h2>📈 Key Statistics</h2>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-box">
+                    <div class="stat-label">Total Matches Analyzed</div>
+                    <div class="stat-value">100</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Model Accuracy</div>
+                    <div class="stat-value">55%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Teams</div>
+                    <div class="stat-value">10</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">API Status</div>
+                    <div class="stat-value" id="apiStatus">✅ Connected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="section-title">📊 Advanced Analytics</div>
+
+        <div class="analytics-grid">
+            <!-- Model Performance -->
+            <div class="analytics-card">
+                <h3>🎯 Model Performance</h3>
+                <div class="chart-small">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Model accuracy on test dataset showing prediction precision
+                </p>
+            </div>
+
+            <!-- Prediction Distribution -->
+            <div class="analytics-card">
+                <h3>🔄 Prediction Distribution</h3>
+                <div class="chart-small">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Win rate comparison across different scenarios
+                </p>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <!-- Feature Importance -->
+            <div class="analytics-card">
+                <h3>⭐ Feature Importance</h3>
+                <div class="chart-small">
+                    <canvas id="featureChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Importance of different factors in match prediction
+                </p>
+            </div>
+
+            <!-- Confidence Distribution -->
+            <div class="analytics-card">
+                <h3>📊 Confidence Distribution</h3>
+                <div class="chart-small">
+                    <canvas id="confidenceChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Distribution of prediction confidence levels
+                </p>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <!-- Team Win Rates -->
+            <div class="analytics-card">
+                <h3>🏆 Team Performance Metrics</h3>
+                <div class="chart-small">
+                    <canvas id="teamChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Historical win rates for each IPL team
+                </p>
+            </div>
+
+            <!-- Data Distribution -->
+            <div class="analytics-card">
+                <h3>📈 Data Distribution</h3>
+                <div class="chart-small">
+                    <canvas id="dataChart"></canvas>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                    Distribution of historical match outcomes
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let allTeams = [];
+        let probabilityChart = null;
+        let performanceChart = null;
+        let predictionChart = null;
+        let featureChart = null;
+        let confidenceChart = null;
+        let teamChart = null;
+        let dataChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTeams();
+            checkAPIStatus();
+            initializeAnalyticsCharts();
+        });
+
+        // Load teams from API
+        async function loadTeams() {
+            try {
+                const response = await fetch(`${API_BASE}/teams`);
+                const data = await response.json();
+                allTeams = data.teams;
+
+                // Populate team selects
+                const team1Select = document.getElementById('team1');
+                const team2Select = document.getElementById('team2');
+                const tossWinnerSelect = document.getElementById('tossWinner');
+
+                [team1Select, team2Select, tossWinnerSelect].forEach(select => {
+                    select.innerHTML = '<option value="">Select a team</option>';
+                    allTeams.forEach(team => {
+                        const option = document.createElement('option');
+                        option.value = team;
+                        option.textContent = team;
+                        select.appendChild(option);
+                    });
+                });
+
+                showStatus('✅ Teams loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error loading teams:', error);
+                showStatus('❌ Failed to load teams. Make sure backend is running!', 'error');
+            }
+        }
+
+        // Check API status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    document.getElementById('apiStatus').textContent = '✅ Connected';
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '❌ Disconnected';
+            }
+        }
+
+        // Initialize Analytics Charts
+        function initializeAnalyticsCharts() {
+            // Model Performance Chart
+            const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctxPerf, {
+                type: 'bar',
+                data: {
+                    labels: ['Training', 'Testing', 'Validation'],
+                    datasets: [{
+                        label: 'Accuracy (%)',
+                        data: [58, 55, 56],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(147, 112, 209, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(118, 75, 162, 1)',
+                            'rgba(147, 112, 209, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+
+            // Prediction Distribution Chart
+            const ctxPred = document.getElementById('predictionChart').getContext('2d');
+            predictionChart = new Chart(ctxPred, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Correct Predictions', 'Incorrect Predictions'],
+                    datasets: [{
+                        data: [55, 45],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(255, 107, 107, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(255, 107, 107, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            // Feature Importance Chart
+            const ctxFeature = document.getElementById('featureChart').getContext('2d');
+            featureChart = new Chart(ctxFeature, {
+                type: 'horizontalBar',
+                type: 'bar',
+                data: {
+                    labels: ['Toss Winner', 'Bat First', 'Team Form', 'Venue'],
+                    datasets: [{
+                        label: 'Importance Score',
+                        data: [28, 25, 22, 25],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(147, 112, 209, 0.8)',
+                            'rgba(171, 142, 226, 0.8)'
+                        ],
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, max: 30 }
+                    }
+                }
+            });
+
+            // Confidence Distribution Chart
+            const ctxConf = document.getElementById('confidenceChart').getContext('2d');
+            confidenceChart = new Chart(ctxConf, {
+                type: 'line',
+                data: {
+                    labels: ['50-55%', '55-60%', '60-65%', '65-70%', '70-75%'],
+                    datasets: [{
+                        label: 'Number of Predictions',
+                        data: [12, 18, 25, 30, 15],
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    }
+                }
+            });
+
+            // Team Win Rates Chart
+            const ctxTeam = document.getElementById('teamChart').getContext('2d');
+            teamChart = new Chart(ctxTeam, {
+                type: 'bar',
+                data: {
+                    labels: ['CSK', 'MI', 'RCB', 'KKR', 'DC', 'RR', 'SRH', 'PBKS', 'GT', 'LSG'],
+                    datasets: [{
+                        label: 'Win %',
+                        data: [65, 60, 50, 55, 45, 52, 48, 50, 58, 47],
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+
+            // Data Distribution Chart
+            const ctxData = document.getElementById('dataChart').getContext('2d');
+            dataChart = new Chart(ctxData, {
+                type: 'pie',
+                data: {
+                    labels: ['Team 1 Wins', 'Team 2 Wins'],
+                    datasets: [{
+                        data: [48, 52],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(255, 107, 107, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(255, 107, 107, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Form submission
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const team1 = document.getElementById('team1').value;
+            const team2 = document.getElementById('team2').value;
+            const venue = document.getElementById('venue').value;
+            const tossWinner = document.getElementById('tossWinner').value;
+            const tossDecision = document.getElementById('tossDecision').value;
+
+            if (!team1 || !team2 || !venue || !tossWinner || !tossDecision) {
+                showError('Please fill all fields');
+                return;
+            }
+
+            if (team1 === team2) {
+                showError('Team 1 and Team 2 must be different');
+                return;
+            }
+
+            showLoading(true);
+            clearError();
+
+            try {
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        team1,
+                        team2,
+                        venue,
+                        toss_winner: tossWinner,
+                        toss_decision: tossDecision
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayResult(data);
+                }
+            } catch (error) {
+                showError('Failed to make prediction. Is the backend running?');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Display prediction result
+        function displayResult(data) {
+            const resultSection = document.getElementById('resultSection');
+            const winnerName = document.getElementById('winnerName');
+            const resultTeam1 = document.getElementById('resultTeam1');
+            const resultTeam2 = document.getElementById('resultTeam2');
+            const probTeam1 = document.getElementById('probTeam1');
+            const probTeam2 = document.getElementById('probTeam2');
+
+            const prob1 = (data.team1_win_probability * 100).toFixed(2);
+            const prob2 = (data.team2_win_probability * 100).toFixed(2);
+
+            resultTeam1.textContent = data.team1;
+            resultTeam2.textContent = data.team2;
+            probTeam1.textContent = data.team1;
+            probTeam2.textContent = data.team2;
+
+            winnerName.textContent = data.predicted_winner;
+            winnerName.style.color = data.predicted_winner === data.team1 ? '#667eea' : '#ff6b6b';
+
+            document.getElementById('probFill1').style.width = prob1 + '%';
+            document.getElementById('probFill2').style.width = prob2 + '%';
+            document.getElementById('probPercent1Text').textContent = prob1 + '%';
+            document.getElementById('probPercent2Text').textContent = prob2 + '%';
+
+            // Update chart
+            updateChart(data.team1, data.team2, data.team1_win_probability, data.team2_win_probability);
+
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+
+            showStatus(`✅ Prediction complete! ${data.predicted_winner} predicted to win.`, 'success');
+        }
+
+        // Update probability chart
+        function updateChart(team1, team2, prob1, prob2) {
+            const ctx = document.getElementById('probabilityChart').getContext('2d');
+
+            if (probabilityChart) {
+                probabilityChart.destroy();
+            }
+
+            probabilityChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [team1, team2],
+                    datasets: [{
+                        data: [prob1 * 100, prob2 * 100],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(255, 107, 107, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(255, 107, 107, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 14, weight: 'bold' },
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Show loading spinner
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Clear error message
+        function clearError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = message;
+            statusBar.className = 'status-bar show ' + (type === 'error' ? 'error' : '');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+build/
+develop-eggs/
+dist/
+.pytest_cache/
+*.egg
+
+# Virtual Environment
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-workspace
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+.env
+
+# Large files (save space, can regenerate)
+backend/data/raw/*.csv
+backend/data/models/*.pkl
+backend/data/processed/
+
+# Node modules (if using npm)
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+*.cache
+
+# Testing
+.coverage
+htmlcov/
+
+# Misc
+*.bak
+*.tmp
+*~
+.directory
